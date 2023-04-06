@@ -13,10 +13,10 @@ def video(frame):
         if not ret:
             break
 
-        # nconvertiw every frame mel RGB lel HSV
+        # convert every frame from BGR to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # mask yedi rir les pixel li la valeur taehoum jaya f linterval lower upper
+        # lower < pixel < upper --> white
         mask = cv2.inRange(hsv, fire_color_lower, fire_color_upper)
 
         # application filtres morphologique ( dilatation + erosion )

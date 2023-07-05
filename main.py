@@ -1,9 +1,24 @@
 import cv2
 import numpy as np
 
-# FIRE HSV COLOR (from gbt)
+# FIRE HSV COLOR
 fire_color_lower = np.array([5, 150, 150])
 fire_color_upper = np.array([35, 255, 255])
+
+
+def segmentFire(frame):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    mask = cv2.inRange(hsv, fire_color_lower, fire_color_upper)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    return contours
 
 
 def video(frame):
@@ -13,19 +28,8 @@ def video(frame):
         if not ret:
             break
 
-        # convert every frame from BGR to HSV
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # lower < pixel < upper --> white
-        mask = cv2.inRange(hsv, fire_color_lower, fire_color_upper)
-
-        # application filtres morphologique ( dilatation + erosion )
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
         # contours search
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = segmentFire(frame)
 
         # drawing a box over flames
         for cnt in contours:
@@ -42,16 +46,10 @@ def video(frame):
 def image(image):
     image = cv2.imread(image)
 
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # contours search
+    contours = segmentFire(image)
 
-    mask = cv2.inRange(hsv, fire_color_lower, fire_color_upper)
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # drawing a box over flames
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
@@ -74,5 +72,4 @@ elif choice == '2':
     cap.release()
     cv2.destroyAllWindows()
 elif choice == '3':
-    image('firepic.png')
-
+    image('testImages/forest.jpeg')
